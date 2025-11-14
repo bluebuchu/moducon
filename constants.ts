@@ -59,7 +59,7 @@ export const LEVELS: LevelData[] = [
   { id: 4, stage: 1, brand: "YouTube", targets: ["#FF0000"] },
   { id: 5, stage: 1, brand: "Twitch", targets: ["#9146FF"] },
   { id: 6, stage: 1, brand: "Spotify", targets: ["#1DB954"] },
-  { id: 7, stage: 1, brand: "Twitter (X)", targets: ["#1DA1F2"] },
+  { id: 7, stage: 1, brand: "X (formerly Twitter)", targets: ["#000000"] },
   { id: 8, stage: 1, brand: "TikTok", targets: ["#69C9D0"] },
   { id: 9, stage: 1, brand: "PlayStation", targets: ["#003087"] },
   { id: 10, stage: 1, brand: "Pepsi Blue", targets: ["#004B93"] },

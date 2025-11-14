@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Palette, Trophy, Lock, ChevronRight, RotateCcw, Globe, CheckCircle, XCircle } from 'lucide-react';
+import { Palette, Trophy, Lock, ChevronRight, RotateCcw, Globe, CheckCircle, XCircle, Clock, Award } from 'lucide-react';
 import { Lang, ViewState, GameProgress, LevelData, RGB } from './types';
 import { LEVELS, TRANSLATIONS, REQUIRED_ACCURACY } from './constants';
 import { hexToRgb, rgbToHex, calculateSimilarity, getAverageAccuracy } from './utils/color';
 import ColorSlider from './components/ColorSlider';
+import Leaderboard, { addLeaderboardEntry } from './components/Leaderboard';
+import NicknameModal from './components/NicknameModal';
 
 // --- Local Storage Keys ---
 const STORAGE_KEY_PROGRESS = 'cdc_progress_v1';
@@ -29,6 +31,21 @@ function App() {
   const [userColors, setUserColors] = useState<RGB[]>([]);
   const [isLevelComplete, setIsLevelComplete] = useState(false);
   const [levelResult, setLevelResult] = useState<{ success: boolean; accuracies: number[]; avgAccuracy: number } | null>(null);
+  
+  // Timer state - track per stage
+  const [stageTimers, setStageTimers] = useState<Record<number, { start: number | null; end: number | null; isValid: boolean }>>({
+    1: { start: null, end: null, isValid: false },
+    2: { start: null, end: null, isValid: false },
+    3: { start: null, end: null, isValid: false }
+  });
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [currentStageTimer, setCurrentStageTimer] = useState<number | null>(null);
+  const [isPracticeMode, setIsPracticeMode] = useState(false);
+  
+  // Leaderboard state
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [completedStageData, setCompletedStageData] = useState<{ stage: number; time: number; accuracy: number } | null>(null);
 
   // --- Effects ---
   useEffect(() => {
@@ -38,6 +55,20 @@ function App() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_PROGRESS, JSON.stringify(progress));
   }, [progress]);
+  
+  // Timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (currentStageTimer && stageTimers[currentStageTimer]?.start && !stageTimers[currentStageTimer]?.end) {
+      interval = setInterval(() => {
+        const start = stageTimers[currentStageTimer].start;
+        if (start) {
+          setElapsedTime(Math.floor((Date.now() - start) / 1000));
+        }
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [currentStageTimer, stageTimers]);
 
   // --- Helpers ---
   const t = TRANSLATIONS[lang];
@@ -46,6 +77,34 @@ function App() {
   const startLevel = (levelId: number) => {
     const level = LEVELS.find(l => l.id === levelId);
     if (!level) return;
+    
+    // Set current stage timer
+    setCurrentStageTimer(level.stage);
+    
+    // Check if this is the first level of the stage
+    const stageFirstLevels = { 1: 1, 2: 21, 3: 41 };
+    const isFirstLevel = levelId === stageFirstLevels[level.stage as keyof typeof stageFirstLevels];
+    
+    if (isFirstLevel) {
+      // Start official timer for speedrun
+      const now = Date.now();
+      console.log('Starting official speedrun timer for stage', level.stage, 'at:', now);
+      setStageTimers(prev => ({
+        ...prev,
+        [level.stage]: { start: now, end: null, isValid: true }
+      }));
+      setElapsedTime(0);
+      setIsPracticeMode(false);
+    } else if (stageTimers[level.stage].start && stageTimers[level.stage].isValid && !stageTimers[level.stage].end) {
+      // Continue official timer from previous level
+      const elapsed = Math.floor((Date.now() - stageTimers[level.stage].start!) / 1000);
+      setElapsedTime(elapsed);
+      setIsPracticeMode(false);
+    } else {
+      // Practice mode - no official timer
+      setIsPracticeMode(true);
+      setElapsedTime(0);
+    }
     
     // Initialize user colors with a default gray for each target
     setUserColors(level.targets.map(() => ({ r: 127, g: 127, b: 127 })));
@@ -78,6 +137,46 @@ function App() {
     setLevelResult({ success, accuracies, avgAccuracy });
 
     if (success) {
+      // Check if this is the last level of the stage
+      const stageLevels = LEVELS.filter(l => l.stage === currentLevel.stage);
+      const isLastOfStage = stageLevels[stageLevels.length - 1].id === currentLevel.id;
+      
+      console.log('Stage completion check:', {
+        currentLevelId: currentLevel.id,
+        currentStage: currentLevel.stage,
+        stageLevelsCount: stageLevels.length,
+        lastLevelId: stageLevels[stageLevels.length - 1].id,
+        isLastOfStage,
+        stageTimer: stageTimers[currentLevel.stage]
+      });
+      
+      // If last level of stage and timer is valid (started from first level), show nickname modal
+      if (isLastOfStage && stageTimers[currentLevel.stage].start && stageTimers[currentLevel.stage].isValid) {
+        const endTime = Date.now();
+        const startTime = stageTimers[currentLevel.stage].start!;
+        const totalTime = Math.floor((endTime - startTime) / 1000);
+        
+        // Update stage timer with end time
+        setStageTimers(prev => ({
+          ...prev,
+          [currentLevel.stage]: { ...prev[currentLevel.stage], end: endTime }
+        }));
+        
+        // Calculate average accuracy for the entire stage
+        const stageProgress = stageLevels.map(l => progress[l.id]?.bestAccuracy || 0);
+        const stageAvgAccuracy = stageProgress.reduce((a, b) => a + b, 0) / stageLevels.length;
+        
+        setCompletedStageData({
+          stage: currentLevel.stage,
+          time: totalTime,
+          accuracy: Math.max(stageAvgAccuracy, avgAccuracy)
+        });
+        setShowNicknameModal(true);
+      } else if (isLastOfStage && !stageTimers[currentLevel.stage].isValid) {
+        // Completed stage but not eligible for leaderboard (didn't start from first level)
+        console.log('Stage completed in practice mode - no leaderboard entry');
+      }
+      
       setProgress(prev => {
         const next = { ...prev };
         // Update current level
@@ -107,6 +206,19 @@ function App() {
           setView('MENU');
       }
   }
+  
+  const handleNicknameSubmit = (nickname: string) => {
+    if (nickname && completedStageData) {
+      addLeaderboardEntry({
+        nickname,
+        stage: completedStageData.stage,
+        time: completedStageData.time,
+        accuracy: completedStageData.accuracy
+      });
+    }
+    setShowNicknameModal(false);
+    setCompletedStageData(null);
+  };
 
   // --- Renderers ---
 
@@ -120,6 +232,13 @@ function App() {
         <h1 className="font-bold text-lg hidden sm:block">{t.title}</h1>
       </div>
       <div className="flex items-center gap-4">
+        <button
+          onClick={() => setShowLeaderboard(true)}
+          className="flex items-center gap-1 px-3 py-1 bg-slate-800 rounded-full text-xs font-medium hover:bg-slate-700 transition"
+        >
+          <Trophy size={14} />
+          <span className="hidden sm:inline">Leaderboard</span>
+        </button>
         {view === 'GAME' && (
           <button onClick={() => setView('STAGE_SELECT')} className="text-sm text-slate-400 hover:text-white">
             {t.menu}
@@ -209,11 +328,19 @@ function App() {
              <h2 className="text-2xl font-bold">{t.stage} {currentStage}</h2>
           </div>
           
+          <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <p className="text-sm text-amber-400 text-center">
+              🏁 For official speedrun records, start from the first level of each stage!
+            </p>
+          </div>
+          
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {stageLevels.map(level => {
               const levelProgress = progress[level.id];
               const isUnlocked = levelProgress?.unlocked;
               const isCompleted = levelProgress?.completed;
+              const stageFirstLevels = { 1: 1, 2: 21, 3: 41 };
+              const isFirstLevel = level.id === stageFirstLevels[currentStage as keyof typeof stageFirstLevels];
 
               return (
                 <button
@@ -225,6 +352,7 @@ function App() {
                       ? 'bg-slate-800 border-slate-700 hover:border-indigo-500 cursor-pointer' 
                       : 'bg-slate-900 border-slate-800 opacity-50 cursor-not-allowed'}
                     ${isCompleted ? 'border-green-900/50' : ''}
+                    ${isFirstLevel ? 'ring-2 ring-green-500/30' : ''}
                   `}
                 >
                   {isCompleted && (
@@ -236,7 +364,14 @@ function App() {
                   {!isUnlocked ? (
                     <Lock className="text-slate-600 mb-2" />
                   ) : (
-                    <span className="text-2xl font-bold mb-1 text-slate-300">{level.id}</span>
+                    <>
+                      <span className="text-2xl font-bold mb-1 text-slate-300">{level.id}</span>
+                      {isFirstLevel && (
+                        <div className="absolute top-1 left-1 text-xs bg-green-600 text-white px-1 py-0.5 rounded">
+                          START
+                        </div>
+                      )}
+                    </>
                   )}
                   
                   <span className="text-xs text-slate-400 text-center truncate w-full">
@@ -261,6 +396,12 @@ function App() {
     if (!currentLevel) return null;
 
     const hasNextLevel = LEVELS.some(l => l.id === currentLevel.id + 1);
+    
+    const formatTime = (seconds: number) => {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
 
     return (
       <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full p-4 sm:p-6 overflow-y-auto">
@@ -270,6 +411,17 @@ function App() {
               <h3 className="text-3xl font-bold">{currentLevel.brand}</h3>
            </div>
            <div className="text-right">
+               {isPracticeMode ? (
+                 <div className="text-xs text-amber-400 mb-1 font-medium">
+                   Practice Mode
+                 </div>
+               ) : currentStageTimer && stageTimers[currentStageTimer]?.start && !stageTimers[currentStageTimer]?.end && (
+                 <div className="flex items-center gap-1 text-sm text-green-400 mb-1">
+                   <Clock size={14} />
+                   <span className="font-mono">{formatTime(elapsedTime)}</span>
+                   <span className="text-xs">SPEEDRUN</span>
+                 </div>
+               )}
                <div className="text-sm text-slate-400">{t.minScore}</div>
                <div className="text-2xl font-mono font-bold text-slate-200">{REQUIRED_ACCURACY}%</div>
            </div>
@@ -381,6 +533,24 @@ function App() {
         {view === 'STAGE_SELECT' && renderStageSelect()}
         {view === 'GAME' && renderGame()}
       </main>
+      
+      <Leaderboard
+        isOpen={showLeaderboard}
+        onClose={() => setShowLeaderboard(false)}
+        currentStage={currentStage}
+        lang={lang}
+      />
+      
+      {completedStageData && (
+        <NicknameModal
+          isOpen={showNicknameModal}
+          onSubmit={handleNicknameSubmit}
+          time={completedStageData.time}
+          accuracy={completedStageData.accuracy}
+          stage={completedStageData.stage}
+          lang={lang}
+        />
+      )}
     </div>
   );
 }
