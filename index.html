@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Color Designer Challenge</title>
+  <title>K-Brand Color Match</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -16,11 +16,32 @@
              slate: {
                950: '#020617',
              }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.5s ease-in-out',
+            'bounce-slow': 'bounce 2s infinite',
+            'pulse-subtle': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
           }
         },
       },
     }
   </script>
+  <style>
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .animate-gradient {
+      background-size: 200% 200%;
+      animation: gradientShift 3s ease infinite;
+    }
+  </style>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script type="importmap">
 {

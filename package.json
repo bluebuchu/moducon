@@ -1,10 +1,10 @@
 {
-  "name": "color-designer-challenge",
+  "name": "color-designer-v2",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5174",
     "build": "vite build",
     "preview": "vite preview"
   },

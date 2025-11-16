@@ -1,110 +1,210 @@
-import { Lang, LevelData } from './types';
+import { Icon } from './types';
 
-export const REQUIRED_ACCURACY = 90.0;
+export const ICONS: Icon[] = [
+  // Easy Stage - 1색 로고
+  { 
+    id: 1, 
+    name: '모두의 연구소', 
+    category: 'education',
+    difficulty: 'easy',
+    colors: ['#D86762'], // 코랄 레드
+    imagePath: '/icons/모두의 연구소.png'
+  },
+  { 
+    id: 2, 
+    name: '텐스토렌트', 
+    category: 'tech',
+    difficulty: 'easy', 
+    colors: ['#8A78FF'], // 퍼플
+    imagePath: '/icons/텐스토렌트.png'
+  },
+  { 
+    id: 3, 
+    name: '이화여대 창업지원단', 
+    category: 'education',
+    difficulty: 'easy',
+    colors: ['#2F6543'], // 딥 그린
+    imagePath: '/icons/이화여자대학교.png'
+  },
+  { 
+    id: 4, 
+    name: '요즘IT', 
+    category: 'tech',
+    difficulty: 'easy',
+    colors: ['#A55AFE'], // 퍼플 그라데이션
+    imagePath: '/icons/요즘it.png'
+  },
+  
+  // Normal Stage - 2색 로고
+  { 
+    id: 5, 
+    name: 'AiFrenz', 
+    category: 'tech',
+    difficulty: 'normal',
+    colors: ['#444444', '#C47A40'], // 다크 그레이, 오렌지 브라운
+    imagePath: '/icons/ai프렌즈.png'
+  },
+  { 
+    id: 6, 
+    name: '카카오임팩트', 
+    category: 'company',
+    difficulty: 'normal',
+    colors: ['#E8C44A', '#000000'], // 카카오 얐로우, 블랙
+    imagePath: '/icons/카카오임팩트.png'
+  },
+  { 
+    id: 7, 
+    name: '제이펍', 
+    category: 'company',
+    difficulty: 'normal',
+    colors: ['#9DC44A', '#000000'], // 라임그린, 블랙
+    imagePath: '/icons/제이펍.png'
+  },
+  { 
+    id: 8, 
+    name: '고용노동부', 
+    category: 'government',
+    difficulty: 'normal',
+    colors: ['#0F2A4A', '#C6342D'], // 네이비, 레드
+    imagePath: '/icons/고용노동부.png'
+  },
+  
+  // Hard Stage - 3색 로고
+  { 
+    id: 9, 
+    name: '한국산업인력공단(HRDK)', 
+    category: 'government',
+    difficulty: 'hard',
+    colors: ['#7EC7F7', '#4A84D9', '#234A89'], // 라이트 블루, 미디엄 블루, 네이비
+    imagePath: '/icons/한국산업인력공단.png'
+  },
+  { 
+    id: 10, 
+    name: 'K-하이테크 플랫폼', 
+    category: 'tech',
+    difficulty: 'hard',
+    colors: ['#5BA7E1', '#9CC56A', '#D48A45'], // 블루, 그린, 오렌지
+    imagePath: '/icons/K하이테크 플랫폼.png'
+  },
+  { 
+    id: 11, 
+    name: '동그라미재단', 
+    category: 'education',
+    difficulty: 'hard',
+    colors: ['#6A9D91', '#99ACA9', '#CFDCDC'], // 메인 그린, 라이트 그린/민트, 민트 그레이
+    imagePath: '/icons/동그라미재단.png'
+  },
+  
+  // Extreme Stage - 5색 로고 (고정)
+  { 
+    id: 12, 
+    name: 'ClaBi', 
+    category: 'company',
+    difficulty: 'extreme',
+    colors: ['#5DA2E6', '#E58A3A', '#F0C44A', '#65A857', '#0E0E0E'], // 블루, 오렌지, 얐로우, 그린, 블랙
+    imagePath: '/icons/클라비.png'
+  },
+];
+
+export const REQUIRED_ACCURACY = 90;
+
+export const DIFFICULTY_SETTINGS = {
+  easy: {
+    colorVariations: 4,
+    maxTimeSec: 60,
+    label: 'Easy',
+  },
+  normal: {
+    colorVariations: 5,
+    maxTimeSec: 75,
+    label: 'Normal',
+  },
+  hard: {
+    colorVariations: 6,
+    maxTimeSec: 90,
+    label: 'Hard',
+  },
+  extreme: {
+    colorVariations: 8,
+    maxTimeSec: 120,
+    label: 'Extreme',
+  },
+};
+
+export const STORAGE_KEY_RECORDS = 'color-logo-game-records-v1';
 
 export const TRANSLATIONS = {
   EN: {
-    title: "Color Designer Challenge",
-    start: "Start Game",
-    stage: "Stage",
-    level: "Level",
-    locked: "Locked",
-    completed: "Completed",
-    accuracy: "Accuracy",
-    target: "Target",
-    yourColor: "Your Color",
-    submit: "Submit Colors",
-    nextLevel: "Next Level",
-    retry: "Retry",
-    menu: "Menu",
-    stage1Title: "Single Color Mastery",
-    stage2Title: "Dual Tone Harmony",
-    stage3Title: "Complex Brand Palettes",
-    success: "Excellent Match!",
-    failure: "Try Again!",
-    minScore: "Min 90% required",
-    totalScore: "Total Score",
-    reset: "Reset Progress"
+    title: 'Color Level Game',
+    subtitle: '로고 색상 난이도 4단계 · 총 소요 시간으로 승부 보는 게임',
+    startGame: 'Start Game',
+    selectDifficulty: 'Select Difficulty',
+    easy: 'Easy (1 Color)',
+    normal: 'Normal (2 Colors)',
+    hard: 'Hard (3+ Colors)',
+    selectIcon: 'Select Icon',
+    of: 'of',
+    originalColor: 'Which one is the original color?',
+    correct: 'Correct!',
+    wrong: 'Wrong!',
+    nextPuzzle: 'Next Puzzle',
+    stageComplete: 'Stage Complete!',
+    tryAgain: 'Try Again',
+    yourScore: 'Your Score',
+    time: 'Time',
+    accuracy: 'Accuracy',
+    nextLevel: 'Next Level',
+    retry: 'Retry',
+    backToMenu: 'Back to Menu',
+    puzzle: 'Puzzle',
+    selectIconPrompt: 'Select an icon for puzzle',
+    iconsSelected: 'icons selected',
+    startPuzzles: 'Start Puzzles',
+    averageAccuracy: 'Average Accuracy',
+    totalTime: 'Total Time',
+    resultTitle: 'Results',
+    excellent: 'Excellent!',
+    good: 'Good Job!',
+    keepTrying: 'Keep Trying!',
+    unlockNext: 'Next difficulty unlocked!',
+    iconSelection: 'Icon Selection',
   },
   ES: {
-    title: "Desafío de Diseñador de Color",
-    start: "Comenzar",
-    stage: "Etapa",
-    level: "Nivel",
-    locked: "Bloqueado",
-    completed: "Completado",
-    accuracy: "Precisión",
-    target: "Objetivo",
-    yourColor: "Tu Color",
-    submit: "Enviar Colores",
-    nextLevel: "Siguiente Nivel",
-    retry: "Reintentar",
-    menu: "Menú",
-    stage1Title: "Dominio de Un Color",
-    stage2Title: "Armonía de Dos Tonos",
-    stage3Title: "Paletas de Marca Complejas",
-    success: "¡Excelente Coincidencia!",
-    failure: "¡Inténtalo de Nuevo!",
-    minScore: "Mínimo 90% requerido",
-    totalScore: "Puntuación Total",
-    reset: "Reiniciar Progreso"
-  }
+    title: 'Coincidencia de Color K-Brand',
+    subtitle: '¡Prueba tu memoria de colores con marcas coreanas!',
+    startGame: 'Iniciar Juego',
+    selectDifficulty: 'Seleccionar Dificultad',
+    easy: 'Fácil (1 Color)',
+    normal: 'Normal (2 Colores)',
+    hard: 'Difícil (3+ Colores)',
+    selectIcon: 'Seleccionar Icono',
+    of: 'de',
+    originalColor: '¿Cuál es el color original?',
+    correct: '¡Correcto!',
+    wrong: '¡Incorrecto!',
+    nextPuzzle: 'Siguiente Puzzle',
+    stageComplete: '¡Etapa Completa!',
+    tryAgain: 'Intentar de Nuevo',
+    yourScore: 'Tu Puntuación',
+    time: 'Tiempo',
+    accuracy: 'Precisión',
+    nextLevel: 'Siguiente Nivel',
+    retry: 'Reintentar',
+    backToMenu: 'Volver al Menú',
+    puzzle: 'Puzzle',
+    selectIconPrompt: 'Selecciona un icono para el puzzle',
+    iconsSelected: 'iconos seleccionados',
+    startPuzzles: 'Iniciar Puzzles',
+    averageAccuracy: 'Precisión Promedio',
+    totalTime: 'Tiempo Total',
+    resultTitle: 'Resultados',
+    excellent: '¡Excelente!',
+    good: '¡Buen Trabajo!',
+    keepTrying: '¡Sigue Intentando!',
+    unlockNext: '¡Siguiente dificultad desbloqueada!',
+    iconSelection: 'Selección de Iconos',
+  },
 };
 
-export const LEVELS: LevelData[] = [
-  // STAGE 1 (20)
-  { id: 1, stage: 1, brand: "Coca-Cola", targets: ["#F40009"] },
-  { id: 2, stage: 1, brand: "Starbucks", targets: ["#00704A"] },
-  { id: 3, stage: 1, brand: "Facebook", targets: ["#1877F2"] },
-  { id: 4, stage: 1, brand: "YouTube", targets: ["#FF0000"] },
-  { id: 5, stage: 1, brand: "Twitch", targets: ["#9146FF"] },
-  { id: 6, stage: 1, brand: "Spotify", targets: ["#1DB954"] },
-  { id: 7, stage: 1, brand: "X (formerly Twitter)", targets: ["#000000"] },
-  { id: 8, stage: 1, brand: "TikTok", targets: ["#69C9D0"] },
-  { id: 9, stage: 1, brand: "PlayStation", targets: ["#003087"] },
-  { id: 10, stage: 1, brand: "Pepsi Blue", targets: ["#004B93"] },
-  { id: 11, stage: 1, brand: "Adobe", targets: ["#FF0000"] },
-  { id: 12, stage: 1, brand: "Netflix", targets: ["#E50914"] },
-  { id: 13, stage: 1, brand: "Lego", targets: ["#DA291C"] },
-  { id: 14, stage: 1, brand: "Canon", targets: ["#BC0024"] },
-  { id: 15, stage: 1, brand: "Nintendo", targets: ["#E60012"] },
-  { id: 16, stage: 1, brand: "LinkedIn", targets: ["#0A66C2"] },
-  { id: 17, stage: 1, brand: "FedEx Purple", targets: ["#4D148C"] },
-  { id: 18, stage: 1, brand: "Slack Purple", targets: ["#4A154B"] },
-  { id: 19, stage: 1, brand: "WhatsApp", targets: ["#25D366"] },
-  { id: 20, stage: 1, brand: "Pinterest", targets: ["#BD081C"] },
-
-  // STAGE 2 (20)
-  { id: 21, stage: 2, brand: "McDonald’s", targets: ["#DA291C", "#FFC300"] },
-  { id: 22, stage: 2, brand: "IKEA", targets: ["#0058A3", "#FFDA1A"] },
-  { id: 23, stage: 2, brand: "Pepsi", targets: ["#004B93", "#E32934"] },
-  { id: 24, stage: 2, brand: "FedEx Express", targets: ["#4D148C", "#FF6600"] },
-  { id: 25, stage: 2, brand: "WWF", targets: ["#000000", "#FFFFFF"] },
-  { id: 26, stage: 2, brand: "Wikipedia", targets: ["#000000", "#BBBBBB"] },
-  { id: 27, stage: 2, brand: "Uniqlo", targets: ["#E60012", "#FFFFFF"] },
-  { id: 28, stage: 2, brand: "Honda", targets: ["#E60012", "#B7B7B7"] },
-  { id: 29, stage: 2, brand: "Target", targets: ["#CC0000", "#FFFFFF"] },
-  { id: 30, stage: 2, brand: "KFC", targets: ["#D51A20", "#FFFFFF"] },
-  { id: 31, stage: 2, brand: "Coca-Cola Light", targets: ["#C0C0C0", "#F40009"] },
-  { id: 32, stage: 2, brand: "DHL", targets: ["#FFCC00", "#CC0000"] },
-  { id: 33, stage: 2, brand: "Shell", targets: ["#FAD000", "#E31837"] },
-  { id: 34, stage: 2, brand: "Burger King", targets: ["#005EB8", "#D62300"] },
-  { id: 35, stage: 2, brand: "Firefox Simple", targets: ["#FF9500", "#0056D2"] },
-  { id: 36, stage: 2, brand: "Subway", targets: ["#00543D", "#FFCE00"] },
-  { id: 37, stage: 2, brand: "Batman", targets: ["#000000", "#FCE300"] },
-  { id: 38, stage: 2, brand: "National Geographic", targets: ["#FFCC00", "#000000"] },
-  { id: 39, stage: 2, brand: "UPS", targets: ["#351C15", "#FFB500"] },
-  { id: 40, stage: 2, brand: "Ferrari", targets: ["#FF2800", "#000000"] },
-
-  // STAGE 3 (10)
-  { id: 41, stage: 3, brand: "Google", targets: ["#4285F4", "#DB4437", "#F4B400", "#0F9D58"] },
-  { id: 42, stage: 3, brand: "Microsoft", targets: ["#F25022", "#7FBA00", "#00A4EF", "#FFB900"] },
-  { id: 43, stage: 3, brand: "eBay", targets: ["#E53238", "#0064D2", "#F5AF02", "#86B817"] },
-  { id: 44, stage: 3, brand: "Olympic Rings", targets: ["#0081C8", "#FCB131", "#000000", "#00A651", "#EE334E"] },
-  { id: 45, stage: 3, brand: "Slack (Full)", targets: ["#36C5F0", "#2EB67D", "#E01E5A", "#ECB22E"] },
-  { id: 46, stage: 3, brand: "NBC", targets: ["#FCB711", "#F37021", "#CC004C", "#6460AA", "#0089D0", "#0DB14B"] },
-  { id: 47, stage: 3, brand: "Instagram (Dominant)", targets: ["#405DE6", "#833AB4", "#E1306C", "#FCAF45"] },
-  { id: 48, stage: 3, brand: "Chrome", targets: ["#DB4437", "#F4B400", "#0F9D58", "#4285F4"] },
-  { id: 49, stage: 3, brand: "Domino's", targets: ["#006491", "#E31837", "#FFFFFF"] },
-  { id: 50, stage: 3, brand: "7-Eleven", targets: ["#008060", "#F7921E", "#EE2D24"] },
-];
+export const STORAGE_KEY_PROGRESS = 'k_brand_color_match_progress';
+export const STORAGE_KEY_LANG = 'k_brand_color_match_lang';
