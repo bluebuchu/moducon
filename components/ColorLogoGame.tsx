@@ -4,6 +4,8 @@ import { ICONS, DIFFICULTY_SETTINGS, STORAGE_KEY_RECORDS } from '../constants';
 import { hexToRgb, rgbToHex, calculateSimilarity } from '../utils/color';
 import ColorSlider from './ColorSlider';
 import StageCountdown from './StageCountdown';
+import NicknameModal from './NicknameModal';
+import Leaderboard, { addLeaderboardEntry } from './Leaderboard';
 
 interface LogoColor {
   hex: string;
@@ -81,6 +83,15 @@ const ColorLogoGame: React.FC = () => {
   const [showCountdown, setShowCountdown] = useState(false);
 
   const [records, setRecords] = useState<RecordItem[]>([]);
+  
+  // 닉네임 모달 및 리더보드 상태
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [gameResult, setGameResult] = useState<{
+    time: number;
+    accuracy: number;
+    stage: number;
+  } | null>(null);
 
   // 색상 게임 상태
   const [currentColorIndex, setCurrentColorIndex] = useState(0);
@@ -124,6 +135,28 @@ const ColorLogoGame: React.FC = () => {
   }, [timerRunning]);
 
   const getStageConfig = (key: Difficulty) => STAGES.find((s) => s.key === key)!;
+
+  // Delta E 색상 차이 계산 함수
+  const calculateDeltaE = (color1: any, color2: any) => {
+    const dr = color1.r - color2.r;
+    const dg = color1.g - color2.g;
+    const db = color1.b - color2.b;
+    return Math.sqrt(dr * dr + dg * dg + db * db);
+  };
+
+  // 현재 단계의 정확도 계산 함수
+  const calculateCurrentAccuracy = () => {
+    if (!currentLogo || !currentStageKey) return 85.0; // 기본값
+    
+    const targetColor = currentLogo.colors[currentColorIndex];
+    const deltaE = calculateDeltaE(userColor, targetColor);
+    
+    // Delta E를 백분율로 변환 (0-100%)
+    const maxDeltaE = 150; // 최대 Delta E 값 (RGB 색공간에서)
+    const accuracy = Math.max(0, Math.min(100, 100 - (deltaE / maxDeltaE) * 100));
+    
+    return Math.round(accuracy * 10) / 10; // 소수점 첫째 자리까지
+  };
 
   const getCurrentLogo = () => {
     if (currentStageKey) {
@@ -250,6 +283,7 @@ const ColorLogoGame: React.FC = () => {
         console.log('All stages completed!');
         const finalTotal = totalElapsed + stageElapsed;
 
+        // 기존 기록 시스템 유지
         const newRecord: RecordItem = {
           id: `${Date.now()}`,
           totalTime: finalTotal,
@@ -258,6 +292,14 @@ const ColorLogoGame: React.FC = () => {
         const updated = [...records, newRecord].sort((a, b) => a.totalTime - b.totalTime);
         setRecords(updated.slice(0, 10));
         localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(updated));
+        
+        // 새로운 개별화된 랭킹 시스템
+        setGameResult({
+          time: finalTotal,
+          accuracy: 100, // 전체 단계 완료이므로 100%
+          stage: 4 // 4단계 모두 완료
+        });
+        setShowNicknameModal(true);
         setPhase("finished");
       }
     }, 3000);
@@ -279,6 +321,47 @@ const ColorLogoGame: React.FC = () => {
     setShowResult(false);
     setAccuracy(0);
     setStageCompleted(false);
+    setShowNicknameModal(false);
+    setShowLeaderboard(false);
+    setGameResult(null);
+  };
+
+  // 닉네임 제출 핸들러
+  const handleNicknameSubmit = async (nickname: string) => {
+    console.log('🎮 [Game] 닉네임 제출 시작:', { nickname: nickname.trim(), gameResult });
+    
+    if (gameResult && nickname.trim()) {
+      const entryData = {
+        nickname: nickname.trim(),
+        stage: gameResult.stage,
+        time: gameResult.time,
+        accuracy: gameResult.accuracy
+      };
+      
+      console.log('📝 [Game] 리더보드 엔트리 저장 중:', entryData);
+      
+      try {
+        await addLeaderboardEntry(entryData);
+        console.log('✅ [Game] 리더보드 엔트리 저장 완료');
+      } catch (error) {
+        console.error('❌ [Game] 리더보드 엔트리 저장 실패:', error);
+      }
+    } else {
+      console.warn('⚠️ [Game] 닉네임 제출 조건 미충족:', { 
+        hasGameResult: !!gameResult, 
+        hasNickname: !!nickname.trim() 
+      });
+    }
+    
+    setShowNicknameModal(false);
+    
+    // 닉네임 제출 후 게임 결과 초기화
+    setGameResult(null);
+  };
+
+  // 리더보드 열기/닫기
+  const toggleLeaderboard = () => {
+    setShowLeaderboard(!showLeaderboard);
   };
 
   // 현재 선택 단계에 해당하는 로고들
@@ -334,19 +417,27 @@ const ColorLogoGame: React.FC = () => {
               로고 색상 난이도 4단계 · 총 소요 시간으로 승부 보는 게임
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 text-xs sm:text-sm">
-            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
-              Easy: 1색
-            </span>
-            <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-700 border border-sky-200">
-              Normal: 2색
-            </span>
-            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
-              Hard: 3색
-            </span>
-            <span className="px-3 py-1 rounded-full bg-fuchsia-100 text-fuchsia-700 border border-fuchsia-200">
-              Extreme: 5색 고정(ClaBi)
-            </span>
+          <div className="flex flex-col items-end gap-3">
+            <button
+              onClick={toggleLeaderboard}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl hover:from-purple-600 hover:to-indigo-600 transition-all shadow-lg text-sm font-semibold"
+            >
+              🏆 리더보드
+            </button>
+            <div className="flex flex-wrap gap-2 text-xs sm:text-sm">
+              <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+                Easy: 1색
+              </span>
+              <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-700 border border-sky-200">
+                Normal: 2색
+              </span>
+              <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                Hard: 3색
+              </span>
+              <span className="px-3 py-1 rounded-full bg-fuchsia-100 text-fuchsia-700 border border-fuchsia-200">
+                Extreme: 5색 고정(ClaBi)
+              </span>
+            </div>
           </div>
         </header>
 
@@ -793,12 +884,20 @@ const ColorLogoGame: React.FC = () => {
                       Easy → Normal → Hard → Extreme 모든 단계 클리어!
                     </div>
                   </div>
-                  <button
-                    onClick={handleReset}
-                    className="w-full px-4 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-400 transition-colors font-semibold"
-                  >
-                    다시 도전하기
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={toggleLeaderboard}
+                      className="flex-1 px-4 py-3 bg-purple-500 text-white rounded-xl hover:bg-purple-400 transition-colors font-semibold"
+                    >
+                      🏆 리더보드 보기
+                    </button>
+                    <button
+                      onClick={handleReset}
+                      className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-400 transition-colors font-semibold"
+                    >
+                      다시 도전하기
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -833,6 +932,26 @@ const ColorLogoGame: React.FC = () => {
             </div>
           </div>
         </div>
+        
+        {/* 닉네임 모달 */}
+        {gameResult && (
+          <NicknameModal
+            isOpen={showNicknameModal}
+            onSubmit={handleNicknameSubmit}
+            time={gameResult.time}
+            accuracy={gameResult.accuracy}
+            stage={gameResult.stage}
+            lang="EN"
+          />
+        )}
+        
+        {/* 리더보드 */}
+        <Leaderboard
+          isOpen={showLeaderboard}
+          onClose={() => setShowLeaderboard(false)}
+          currentStage={4}
+          lang="EN"
+        />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Save } from 'lucide-react';
 
 interface NicknameModalProps {
@@ -19,6 +19,16 @@ const NicknameModal: React.FC<NicknameModalProps> = ({
   lang
 }) => {
   const [nickname, setNickname] = useState('');
+  
+  // 모달이 열릴 때 닉네임 초기화
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🎯 [NicknameModal] 모달 열림 - 닉네임 초기화');
+      setNickname('');
+    }
+  }, [isOpen]);
+  
+  console.log('🏷️ [NicknameModal] 현재 닉네임:', nickname, '길이:', nickname.trim().length);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -28,8 +38,13 @@ const NicknameModal: React.FC<NicknameModalProps> = ({
 
   const handleSubmit = () => {
     const trimmed = nickname.trim();
+    console.log('💾 [NicknameModal] 저장 시도:', { nickname, trimmed, length: trimmed.length });
+    
     if (trimmed.length > 0 && trimmed.length <= 10) {
+      console.log('✅ [NicknameModal] 저장 조건 충족, onSubmit 호출');
       onSubmit(trimmed);
+    } else {
+      console.warn('❌ [NicknameModal] 저장 조건 미충족:', { length: trimmed.length });
     }
   };
 
@@ -86,7 +101,11 @@ const NicknameModal: React.FC<NicknameModalProps> = ({
               <input
                 type="text"
                 value={nickname}
-                onChange={(e) => setNickname(e.target.value.slice(0, 10))}
+                onChange={(e) => {
+                  const newValue = e.target.value.slice(0, 10);
+                  console.log('✏️ [NicknameModal] 입력 변경:', { old: nickname, new: newValue });
+                  setNickname(newValue);
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 placeholder={txt.placeholder}
                 className="bg-transparent flex-1 outline-none text-white placeholder:text-slate-600"
@@ -108,7 +127,7 @@ const NicknameModal: React.FC<NicknameModalProps> = ({
             </button>
             <button
               onClick={handleSubmit}
-              disabled={nickname.trim().length === 0}
+              disabled={!nickname.trim() || nickname.trim().length === 0}
               className={`flex-1 py-3 rounded-lg font-medium transition flex items-center justify-center gap-2
                 ${nickname.trim().length > 0
                   ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
