@@ -59,7 +59,6 @@ function LoadingScreen() {
 function App() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [hasError, setHasError] = React.useState(false);
-  const [showConnectionTest, setShowConnectionTest] = React.useState(false);
 
   React.useEffect(() => {
     // 컴포넌트 동적 로딩
@@ -67,7 +66,6 @@ function App() {
       try {
         // 필요한 모듈들을 미리 확인
         const { default: ColorLogoGame } = await import('./components/ColorLogoGame');
-        const { default: ConnectionTest } = await import('./components/ConnectionTest');
         
         console.log('✅ 모든 컴포넌트가 로드되었습니다');
         setIsLoading(false);
@@ -109,7 +107,6 @@ function App() {
 
   // 동적 import로 컴포넌트 로딩
   const ColorLogoGame = React.lazy(() => import('./components/ColorLogoGame'));
-  const ConnectionTest = React.lazy(() => import('./components/ConnectionTest'));
 
   return (
     <ErrorBoundary>
@@ -117,20 +114,6 @@ function App() {
         <div className="relative">
           <ColorLogoGame />
           
-          {/* 연결 상태 토글 버튼 */}
-          <button
-            onClick={() => setShowConnectionTest(!showConnectionTest)}
-            className="fixed top-4 left-4 z-40 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition shadow-lg flex items-center gap-2"
-            title="Google Sheets 연결 테스트"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            연결 테스트
-          </button>
-          
-          {/* 연결 테스트 컴포넌트 (조건부 렌더링) */}
-          {showConnectionTest && <ConnectionTest onClose={() => setShowConnectionTest(false)} />}
         </div>
       </React.Suspense>
     </ErrorBoundary>
